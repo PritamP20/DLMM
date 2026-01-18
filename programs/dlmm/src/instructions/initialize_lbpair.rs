@@ -19,3 +19,13 @@ pub struct InitializeLbPair<'info>{
     pub token_y_mint: Account<'info, Mint>,
     pub system_program: Program<'info, System>
 }
+
+pub fn handler(ctx: Context<InitializeLbPair>, bin_step: u16)->Result<()>{
+    let lb_pair = &mut ctx.accounts.lb_pair;
+    lb_pair.token_x_mint = ctx.accounts.token_x_mint.key();
+    lb_pair.token_y_mint = ctx.accounts.token_y_mint.key();
+    lb_pair.bin_step = bin_step;
+    lb_pair.active_bin_id = 0;
+    lb_pair.bump = ctx.bumps.lb_pair;
+    Ok(())
+}

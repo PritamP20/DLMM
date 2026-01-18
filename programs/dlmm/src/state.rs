@@ -2,17 +2,17 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct LbPair{
-    token_x_mint: Pubkey,
-    token_y_mint: Pubkey,
-    reserve_x: u64,
-    reserve_y: u64,
-    bin_step: u16,
-    active_bin_id: u16,
-    base_free_rate: u64,
-    protocol_fee_rate: u64,
-    volatility_accumulator: u64,
-    last_update_timestamp: u64,
-    bump:u8
+    pub token_x_mint: Pubkey,
+    pub token_y_mint: Pubkey,
+    pub reserve_x: u64,
+    pub reserve_y: u64,
+    pub bin_step: u16,
+    pub active_bin_id: u16,
+    pub base_free_rate: u64,
+    pub protocol_fee_rate: u64,
+    pub volatility_accumulator: u64,
+    pub last_update_timestamp: u64,
+    pub bump:u8
 }
 
 impl LbPair{
