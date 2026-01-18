@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[account]
-pub struct LbPair{
+pub struct LbPair {
     pub token_x_mint: Pubkey,
     pub token_y_mint: Pubkey,
     pub reserve_x: u64,
@@ -12,50 +12,50 @@ pub struct LbPair{
     pub protocol_fee_rate: u64,
     pub volatility_accumulator: u64,
     pub last_update_timestamp: u64,
-    pub bump:u8
+    pub bump: u8,
 }
 
-impl LbPair{
-    pub const LEN: usize = 8
-        + 32 + 32
-        + 8 + 8
-        + 2 + 2
-        + 8 + 8
-        + 8 + 8
-        + 1;
+impl LbPair {
+    pub const LEN: usize = 8 + 32 + 32 + 8 + 8 + 2 + 2 + 8 + 8 + 8 + 8 + 1;
 }
 
 #[account]
-pub struct Bin{
+pub struct Bin {
     pub reserve_x: u64,
     pub reserve_y: u64,
     pub bin_id: u16,
     pub total_shares: u128,
     pub fee_x_per_share: u128,
     pub fee_y_per_share: u128,
-    pub bump:u8
+    pub bump: u8,
 }
 
-impl Bin{
-    pub const LEN: usize = 8
-        + 8 + 8
-        + 2 + 2
-        + 16 + 16
-        + 1;
+impl Bin {
+    pub const LEN: usize = 8 + 8 + 8 + 2 + 2 + 16 + 16 + 1;
 }
 
 #[account]
-pub struct BinArray{
+pub struct BinArray {
     pub lb_pair: Pubkey,
     pub index: u16,
     pub bins: [Bin; 70],
-    pub bump: u8
+    pub bump: u8,
 }
 
-impl BinArray{
-    pub const LEN: usize = 8
-        + 32
-        + 2
-        + 70 * Bin::LEN
-        + 1;
+impl BinArray {
+    pub const LEN: usize = 8 + 32 + 2 + 70 * Bin::LEN + 1;
+}
+
+#[account]
+pub struct Position {
+    pub lb_pair: Pubkey,
+    pub owner: Pubkey,
+    pub lower_bin_id: i32,
+    pub upper_bin_id: i32,
+    pub liquidity_shares: [u128; 70],
+    pub bump: u8,
+}
+
+impl Position {
+    pub const LEN: usize = 8 + 32 + 32 + 4 + 4 + 70 * 16 + 1;
 }
