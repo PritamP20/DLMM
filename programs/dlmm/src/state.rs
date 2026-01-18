@@ -16,7 +16,7 @@ pub struct LbPair{
 }
 
 impl LbPair{
-    const LEN: usize = 8
+    pub const LEN: usize = 8
         + 32 + 32
         + 8 + 8
         + 2 + 2
