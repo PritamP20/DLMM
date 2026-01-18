@@ -53,7 +53,7 @@ pub struct BinArray{
 }
 
 impl BinArray{
-    const LEN: usize = 8
+    pub const LEN: usize = 8
         + 32
         + 2
         + 70 * Bin::LEN
