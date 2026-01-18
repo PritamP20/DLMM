@@ -27,17 +27,17 @@ impl LbPair{
 
 #[account]
 pub struct Bin{
-    reserve_x: u64,
-    reserve_y: u64,
-    bin_id: u16,
-    total_shares: u128,
-    fee_x_per_share: u128,
-    fee_y_per_share: u128,
-    bump:u8
+    pub reserve_x: u64,
+    pub reserve_y: u64,
+    pub bin_id: u16,
+    pub total_shares: u128,
+    pub fee_x_per_share: u128,
+    pub fee_y_per_share: u128,
+    pub bump:u8
 }
 
 impl Bin{
-    const LEN: usize = 8
+    pub const LEN: usize = 8
         + 8 + 8
         + 2 + 2
         + 16 + 16
