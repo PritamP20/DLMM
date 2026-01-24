@@ -1,9 +1,8 @@
 use anchor_lang::prelude::*;
-mod instructions;
-mod state;
+pub mod instructions;
+pub mod state;
 
-use instructions::add_liquidity::{AddLiquidity, BinLiquidityDistribution};
-use instructions::remove_liquidity::{BinLiquidityReduction, RemoveLiquidity};
+pub use instructions::*;
 
 declare_id!("Azjj9nPdEZToafRKgtU2DpCbscZKbcuAHU3sCvs2bSE4");
 

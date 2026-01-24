@@ -74,7 +74,6 @@ pub fn handler(
         let bin_id = reduction.bin_id;
         let shares_to_burn = reduction.shares_to_burn;
 
-        // Find bin index
         let base_bin_id = (bin_array.index as i32) * 70;
         let bin_index = (bin_id - base_bin_id) as usize;
         require!(bin_index < 70, ErrorCode::BinOutOfRange);
@@ -94,8 +93,6 @@ pub fn handler(
             continue;
         }
 
-        // Calculate amounts to withdraw
-        // amount = reserve * shares / total_shares
         let amount_x = (bin.reserve_x as u128)
             .checked_mul(shares_to_burn)
             .ok_or(ErrorCode::Overflow)?
@@ -108,7 +105,6 @@ pub fn handler(
             .checked_div(bin.total_shares)
             .ok_or(ErrorCode::Overflow)? as u64;
 
-        // Update bin
         bin.reserve_x = bin
             .reserve_x
             .checked_sub(amount_x)
@@ -122,7 +118,6 @@ pub fn handler(
             .checked_sub(shares_to_burn)
             .ok_or(ErrorCode::Overflow)?;
 
-        // Update position
         position.liquidity_shares[bin_index] = position.liquidity_shares[bin_index]
             .checked_sub(shares_to_burn)
             .ok_or(ErrorCode::Overflow)?;
@@ -139,7 +134,6 @@ pub fn handler(
         );
     }
 
-    // Signer seeds for PDA
     let seeds = &[
         b"lb_pair",
         lb_pair.token_x_mint.as_ref(),
@@ -148,7 +142,6 @@ pub fn handler(
     ];
     let signer = &[&seeds[..]];
 
-    // Transfer X
     if total_x_withdrawn > 0 {
         let cpi_accounts = Transfer {
             from: ctx.accounts.reserve_x.to_account_info(),
@@ -163,7 +156,6 @@ pub fn handler(
         token::transfer(cpi_ctx, total_x_withdrawn)?;
     }
 
-    // Transfer Y
     if total_y_withdrawn > 0 {
         let cpi_accounts = Transfer {
             from: ctx.accounts.reserve_y.to_account_info(),
@@ -178,7 +170,6 @@ pub fn handler(
         token::transfer(cpi_ctx, total_y_withdrawn)?;
     }
 
-    // Update lb_pair reserves
     lb_pair.reserve_x = lb_pair
         .reserve_x
         .checked_sub(total_x_withdrawn)
