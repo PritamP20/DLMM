@@ -19,31 +19,35 @@ impl LbPair {
     pub const LEN: usize = 8 + 32 + 32 + 8 + 8 + 2 + 2 + 8 + 8 + 8 + 8 + 1;
 }
 
-#[account]
+#[zero_copy]
+#[repr(C)]
 pub struct Bin {
-    pub reserve_x: u64,
-    pub reserve_y: u64,
-    pub bin_id: u16,
     pub total_shares: u128,
     pub fee_x_per_share: u128,
     pub fee_y_per_share: u128,
+    pub reserve_x: u64,
+    pub reserve_y: u64,
+    pub bin_id: u16,
     pub bump: u8,
+    pub _padding: [u8; 13],
 }
 
 impl Bin {
-    pub const LEN: usize = 8 + 8 + 8 + 2 + 2 + 16 + 16 + 1;
+    pub const LEN: usize = 16 + 16 + 16 + 8 + 8 + 2 + 1 + 13;
 }
 
-#[account]
+#[account(zero_copy)]
+#[repr(C)]
 pub struct BinArray {
     pub lb_pair: Pubkey,
     pub index: u16,
-    pub bins: [Bin; 70],
     pub bump: u8,
+    pub _padding: [u8; 13],
+    pub bins: [Bin; 70],
 }
 
 impl BinArray {
-    pub const LEN: usize = 8 + 32 + 2 + 70 * Bin::LEN + 1;
+    pub const LEN: usize = 32 + 2 + 1 + 13 + (70 * Bin::LEN);
 }
 
 #[account]

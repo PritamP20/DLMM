@@ -1,9 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{
-    state::{BinArray, LbPair},
-};
+use crate::state::{BinArray, LbPair};
 
 #[derive(Accounts)]
 pub struct Swap<'info> {
@@ -11,7 +9,7 @@ pub struct Swap<'info> {
     pub lb_pair: Account<'info, LbPair>,
 
     #[account(mut)]
-    pub bin_array: Account<'info, BinArray>,
+    pub bin_array: AccountLoader<'info, BinArray>,
 
     #[account(mut)]
     pub user: Signer<'info>,
@@ -54,7 +52,7 @@ pub fn handler(
     swap_for_y: bool,
 ) -> Result<()> {
     let lb_pair = &mut ctx.accounts.lb_pair;
-    let bin_array = &mut ctx.accounts.bin_array;
+    let mut bin_array = ctx.accounts.bin_array.load_mut()?;
 
     let mut amount_in_left = amount_in;
     let mut amount_out = 0u64;
@@ -94,9 +92,8 @@ pub fn handler(
             amount_in_left -= amount_in_this_bin;
 
             if bin.reserve_y == 0 {
-                current_bin_id -= 1; 
+                current_bin_id -= 1;
             }
-
         } else {
             require!(bin.reserve_x > 0, ErrorCode::InsufficientLiquidity);
 
@@ -123,15 +120,12 @@ pub fn handler(
             amount_in_left -= amount_in_this_bin;
 
             if bin.reserve_x == 0 {
-                current_bin_id += 1; 
+                current_bin_id += 1;
             }
         }
     }
 
-    require!(
-        amount_out >= min_amount_out,
-        ErrorCode::SlippageExceeded
-    );
+    require!(amount_out >= min_amount_out, ErrorCode::SlippageExceeded);
 
     if swap_for_y {
         let cpi_accounts = Transfer {
@@ -139,10 +133,7 @@ pub fn handler(
             to: ctx.accounts.reserve_x.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            cpi_accounts,
-        );
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
         token::transfer(cpi_ctx, amount_in)?;
 
         let seeds = &[
@@ -164,17 +155,13 @@ pub fn handler(
             signer,
         );
         token::transfer(cpi_ctx, amount_out)?;
-
     } else {
         let cpi_accounts = Transfer {
             from: ctx.accounts.user_y_token.to_account_info(),
             to: ctx.accounts.reserve_y.to_account_info(),
             authority: ctx.accounts.user.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            cpi_accounts,
-        );
+        let cpi_ctx = CpiContext::new(ctx.accounts.token_program.to_account_info(), cpi_accounts);
         token::transfer(cpi_ctx, amount_in)?;
 
         let seeds = &[

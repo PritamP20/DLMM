@@ -15,16 +15,16 @@ pub struct RemoveLiquidity<'info> {
 
     #[account(
         mut,
-        constraint = bin_array.lb_pair == lb_pair.key()
+        constraint = bin_array.load()?.lb_pair == lb_pair.key()
     )]
-    pub bin_array: Account<'info, BinArray>,
+    pub bin_array: AccountLoader<'info, BinArray>,
 
     #[account(
         mut,
         constraint = position.lb_pair == lb_pair.key(),
         constraint = position.owner == user.key()
     )]
-    pub position: Account<'info, Position>,
+    pub position: Box<Account<'info, Position>>,
 
     #[account(
         mut,
@@ -45,14 +45,14 @@ pub struct RemoveLiquidity<'info> {
         constraint = reserve_x.mint == lb_pair.token_x_mint,
         constraint = reserve_x.owner == lb_pair.key()
     )]
-    pub reserve_x: Account<'info, TokenAccount>,
+    pub reserve_x: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         constraint = reserve_y.mint == lb_pair.token_y_mint,
         constraint = reserve_y.owner == lb_pair.key()
     )]
-    pub reserve_y: Account<'info, TokenAccount>,
+    pub reserve_y: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub user: Signer<'info>,
@@ -64,7 +64,7 @@ pub fn handler(
     bin_liquidity_removal: Vec<BinLiquidityReduction>,
 ) -> Result<()> {
     let lb_pair = &mut ctx.accounts.lb_pair;
-    let bin_array = &mut ctx.accounts.bin_array;
+    let mut bin_array = ctx.accounts.bin_array.load_mut()?;
     let position = &mut ctx.accounts.position;
 
     let mut total_x_withdrawn: u64 = 0;

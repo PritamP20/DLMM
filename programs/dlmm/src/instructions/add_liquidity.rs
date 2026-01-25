@@ -2,7 +2,6 @@ use crate::state::{BinArray, LbPair, Position};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-/// Basis points max (100% = 10000)
 pub const BASIS_POINT_MAX: u64 = 10000;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -19,16 +18,18 @@ pub struct AddLiquidity<'info> {
 
     #[account(
         mut,
-        constraint = bin_array.lb_pair == lb_pair.key()
+        constraint = bin_array.load()?.lb_pair == lb_pair.key()
     )]
-    pub bin_array: Account<'info, BinArray>,
+    pub bin_array: AccountLoader<'info, BinArray>,
 
     #[account(
-        mut,
-        constraint = position.lb_pair == lb_pair.key(),
-        constraint = position.owner == user.key()
+        init_if_needed,
+        payer = user,
+        space = 8 + Position::LEN,
+        seeds = [b"position", lb_pair.key().as_ref(), user.key().as_ref()],
+        bump
     )]
-    pub position: Account<'info, Position>,
+    pub position: Box<Account<'info, Position>>,
 
     #[account(
         mut,
@@ -48,13 +49,13 @@ pub struct AddLiquidity<'info> {
         mut,
         constraint = reserve_x.mint == lb_pair.token_x_mint,
     )]
-    pub reserve_x: Account<'info, TokenAccount>,
+    pub reserve_x: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
         constraint = reserve_y.mint == lb_pair.token_y_mint,
     )]
-    pub reserve_y: Account<'info, TokenAccount>,
+    pub reserve_y: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub user: Signer<'info>,
@@ -69,11 +70,16 @@ pub fn handler(
     bin_liquidity_dist: Vec<BinLiquidityDistribution>,
 ) -> Result<()> {
     let lb_pair = &mut ctx.accounts.lb_pair;
-    let bin_array = &mut ctx.accounts.bin_array;
+    let mut bin_array = ctx.accounts.bin_array.load_mut()?;
     let position = &mut ctx.accounts.position;
 
     let mut total_x_deposited: u64 = 0;
     let mut total_y_deposited: u64 = 0;
+
+    if position.lb_pair == Pubkey::default() {
+        position.lb_pair = lb_pair.key();
+        position.owner = ctx.accounts.user.key();
+    }
 
     for dist in bin_liquidity_dist.iter() {
         let target_bin_id = (lb_pair.active_bin_id as i32) + dist.delta_id;
@@ -84,7 +90,6 @@ pub fn handler(
 
         let bin = &mut bin_array.bins[bin_index];
 
-        // Calculate deposit amounts based on distribution percentages
         let deposit_x = (amount_x as u128 * dist.dist_x as u128 / BASIS_POINT_MAX as u128) as u64;
         let deposit_y = (amount_y as u128 * dist.dist_y as u128 / BASIS_POINT_MAX as u128) as u64;
 
@@ -143,7 +148,6 @@ pub fn handler(
         );
     }
 
-    // Transfer tokens from user to reserves
     if total_x_deposited > 0 {
         let cpi_accounts = Transfer {
             from: ctx.accounts.user_token_x.to_account_info(),
@@ -164,7 +168,6 @@ pub fn handler(
         token::transfer(cpi_ctx, total_y_deposited)?;
     }
 
-    // Update lb_pair total reserves
     lb_pair.reserve_x = lb_pair
         .reserve_x
         .checked_add(total_x_deposited)
